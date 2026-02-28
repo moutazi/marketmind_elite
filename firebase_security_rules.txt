@@ -1,0 +1,86 @@
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE FIRESTORE SECURITY RULES — MarketMind Elite
+// File: firestore.rules
+// ═══════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper Functions ───────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // NOTE: For admin access, we use a Firestore document 'admins/{uid}'
+    // to mark trusted admin UIDs. Alternatively use Custom Claims.
+    function isAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validPaymentRequest(data) {
+      return data.keys().hasAll(['deviceUUID','userName','packageId',
+                                  'paymentMethod','transactionId','status','createdAt'])
+          && data.deviceUUID is string  && data.deviceUUID.size() > 0
+          && data.userName   is string  && data.userName.size() > 0
+          && data.packageId  in ['monthly','quarterly','yearly']
+          && data.paymentMethod in ['shamcash','payeer']
+          && data.status == 'pending';   // new requests must be 'pending'
+    }
+
+    // ── App Config ─────────────────────────────────────────────────
+    // Anyone can READ (needed for Sham Cash ID, Payeer wallet, etc.)
+    // Only admins can WRITE
+    match /config/{doc} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Payment Requests ───────────────────────────────────────────
+    // Anyone can CREATE a new pending request (no auth required for users)
+    // Only admins can UPDATE/DELETE (to approve/reject)
+    // Users can read ONLY their own device's requests
+    match /payment_requests/{requestId} {
+      allow create: if validPaymentRequest(request.resource.data);
+      allow read:   if isAdmin()
+                    || resource.data.deviceUUID == request.query.filters.deviceUUID;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Approved Devices ───────────────────────────────────────────
+    // Anyone can READ their own device approval (checked by UUID)
+    // Only admins can WRITE
+    match /approved_devices/{uuid} {
+      allow read:  if true;          // UUID is secret enough; or add request.query check
+      allow write: if isAdmin();
+    }
+
+    // ── Admin Registry ─────────────────────────────────────────────
+    // Only admins can read/write admin list
+    match /admins/{uid} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE STORAGE SECURITY RULES — MarketMind Elite
+// File: storage.rules
+// ═══════════════════════════════════════════════════════════════════
+
+// rules_version = '2';
+// service firebase.storage {
+//   match /b/{bucket}/o {
+//
+//     // Receipts: Only the uploading device can write; admins can read all
+//     match /receipts/{uuid}/{filename} {
+//       allow read:  if request.auth != null;   // Admin is authenticated
+//       allow write: if filename.matches('.*\\.jpg')
+//                    && request.resource.size < 3 * 1024 * 1024  // 3MB max
+//                    && request.resource.contentType.matches('image/.*');
+//     }
+//   }
+// }

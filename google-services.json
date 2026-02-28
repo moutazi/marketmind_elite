@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1044193507017",
+    "project_id": "marketmind165",
+    "storage_bucket": "marketmind165.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1044193507017:android:bd2f3373f8258bc300ff18",
+        "android_client_info": {
+          "package_name": "com.marketmind.elite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCH4gJVCBD9ezXzU9FmobAZSQSOjMKNmbo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
