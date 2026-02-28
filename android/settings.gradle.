@@ -1,0 +1,7 @@
+include ':app'
+
+def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+def properties = new Properties()
+
+assert flutterRoot != null, "Flutter SDK directory not found in local.properties"
+apply from: "$flutterRoot/packages/flutter_tools/gradle/app_plugin_loader.gradle"
